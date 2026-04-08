@@ -1,92 +1,77 @@
-from os import system
-system('cls')
-
-from morpion import afficher_grille
+from morpion import Morpion
 
 
-def jouer_humain_vs_humain():
-    grille = [[" "] * 3 for _ in range(3)]
-    joueurs = ["X", "O"]
-    tour = 0
+def afficher_titre():
+    """Affiche le titre du programme."""
+    print("=" * 45)
+    print("        BIENVENUE DANS LE MORPION")
+    print("=" * 45)
+    print("1. Mode classique")
+    print("2. Mode avec cases bloquées")
+    print("=" * 45)
 
+
+def choisir_mode():
+    """Permet de choisir le mode de jeu."""
+    afficher_titre()
+    choix = input("Choisissez un mode (1 ou 2) : ")
+
+    if choix == "1":
+        return 0
+
+    elif choix == "2":
+        while True:
+            try:
+                nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
+                if 0 <= nb <= 3:
+                    return nb
+                else:
+                    print("Veuillez entrer un nombre entre 0 et 3.")
+            except ValueError:
+                print("Erreur : vous devez entrer un nombre valide.")
+
+    else:
+        print("Choix invalide. Le mode classique sera lancé.")
+        return 0
+
+
+def demander_coordonnees():
+    """Demande la ligne et la colonne au joueur."""
     while True:
-        afficher_grille(grille)
-        joueur = joueurs[tour % 2]
-        print(f"\nTour du joueur {joueur}")
-
         try:
-            ligne = int(input("Ligne (0-2) : "))
-            col  = int(input("Colonne (0-2) : "))
+            ligne = int(input("Entrez la ligne : "))
+            colonne = int(input("Entrez la colonne : "))
+            return ligne, colonne
         except ValueError:
-            print("Entree invalide, réessaie.")
-            continue
-
-        if not (0 <= ligne <= 2 and 0 <= col <= 2):
-            print("Position hors grille, reessaie.")
-            continue
-
-        if grille[ligne][col] != " ":
-            print("Case deja occupee, reessaie.")
-            continue
-
-        grille[ligne][col] = joueur
-        tour += 1
-
-        gagnant = verifier_gagnant(grille)
-        if gagnant:
-            afficher_grille(grille)
-            print(f"\nLe joueur {gagnant} a gagne !")
-            return
-
-        if tour == 9:
-            afficher_grille(grille)
-            print("\nMatch nul !")
-            return
+            print("Erreur : vous devez entrer des nombres entiers.")
 
 
-def jouer_humain_vs_ia():
-    print("\nMode Humain vs IA — en cours de developpement...")
+def jouer_partie():
+    """Lance une partie complète."""
+    nb_cases_bloquees = choisir_mode()
+    jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
 
-def verifier_gagnant(grille):
-    # Lignes et colonnes
-    for i in range(3):
-        if grille[i][0] == grille[i][1] == grille[i][2] != " ":
-            return grille[i][0]
-        if grille[0][i] == grille[1][i] == grille[2][i] != " ":
-            return grille[0][i]
-    # Diagonales
-    if grille[0][0] == grille[1][1] == grille[2][2] != " ":
-        return grille[0][0]
-    if grille[0][2] == grille[1][1] == grille[2][0] != " ":
-        return grille[0][2]
-    return None
-
-
-def afficher_menu():
-    print("\n╔══════════════════════════╗")
-    print("║        MORPION           ║")
-    print("╠══════════════════════════╣")
-    print("║  1. Humain vs Humain     ║")
-    print("║  2. Humain vs IA         ║")
-    print("║  0. Quitter              ║")
-    print("╚══════════════════════════╝")
-
-
-def main():
     while True:
-        afficher_menu()
-        choix = input("\nVotre choix : ").strip()
+        jeu.afficher_grille()
 
-        if choix == "1":
-            jouer_humain_vs_humain()
-        elif choix == "2":
-            jouer_humain_vs_ia()
-        elif choix == "0":
-            print("A bientôt !")
+        ligne, colonne = demander_coordonnees()
+
+        if not jeu.jouer_coup(ligne, colonne):
+            print("Coup invalide : case occupée, bloquée ou hors de la grille.")
+            continue
+
+        if jeu.verifier_victoire(jeu.joueur_actuel):
+            jeu.afficher_grille()
+            print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
             break
-        else:
-            print("Choix invalide, réessaie.")
+
+        if jeu.verifier_match_nul():
+            jeu.afficher_grille()
+            print("\nMatch nul !")
+            break
+
+        jeu.changer_joueur()
 
 
 if __name__ == "__main__":
-    main()
+    jouer_partie()

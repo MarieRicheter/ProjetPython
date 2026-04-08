@@ -1,74 +1,104 @@
-#on definit une constante pour representer une case vide 
+import random
 
-VIDE=" "
 
-# fonction cree une grille vide 3x3
-def initialiser_grille():
-    return[[VIDE] *3 for _ in range(3)]
+class Morpion:
+    def __init__(self, taille=3, nb_cases_bloquees=0):
+        self.taille = taille
+        self.nb_cases_bloquees = nb_cases_bloquees
+        self.grille = [[" " for _ in range(taille)] for _ in range(taille)]
+        self.cases_bloquees = set()
+        self.joueur_actuel = "X"
 
-#fonction affiche la grille dans le terminal
-def afficher_grille(grille):
-    print()
-    for i, ligne in enumerate(grille):
-        print(" | ".join(ligne)) #la ligne est comme : X|O|X
-        if i<2:
-            print("_" *9)  # separation entre les lignes
-        print()
-        
-        #cette fonction retourne la liste des coups possibles
-        #un coup possible = une case encore vide
-        # on renvoit sous formwe de lignes et de colonnes
-    def coup_possibles(grille):
-        actions =[]
-        
-        for i in range(3):
-            for j in range(3):
-                if grille[i][j] == VIDE:
-                    actions.append((i,j))
-        return actions
-    # cette fonction joue un coup si la case et valide
-    def jouer_coup(grille,ligne,col,joueur):
-        if 0 <= ligne <=2 and 0 <= col <= 2 and grille[ligne][col]== VIDE:
-            grille[ligne][col]= joueur
+        if nb_cases_bloquees > 0:
+            self.generer_cases_bloquees()
+
+    def generer_cases_bloquees(self):
+        """Choisit aléatoirement les cases bloquées."""
+        toutes_les_cases = [(i, j) for i in range(self.taille) for j in range(self.taille)]
+        cases_choisies = random.sample(toutes_les_cases, self.nb_cases_bloquees)
+
+        for case in cases_choisies:
+            self.cases_bloquees.add(case)
+            i, j = case
+            self.grille[i][j] = "#"
+
+    def afficher_grille(self):
+        """Affiche une grille plus propre dans le terminal."""
+        print("\n" + "=" * 35)
+        print("           MORPION")
+        print("=" * 35)
+        print(f"Joueur actuel : {self.joueur_actuel}")
+        print("Légende : X = joueur 1 | O = joueur 2 | # = bloquée | . = vide")
+        print("-" * 35)
+
+        print("    " + "   ".join(str(i) for i in range(self.taille)))
+        print("   +" + "---+" * self.taille)
+
+        for i in range(self.taille):
+            ligne_affichee = []
+            for j in range(self.taille):
+                case = self.grille[i][j]
+                if case == " ":
+                    ligne_affichee.append(".")
+                else:
+                    ligne_affichee.append(case)
+
+            print(f" {i} | " + " | ".join(ligne_affichee) + " |")
+            print("   +" + "---+" * self.taille)
+
+    def coup_valide(self, ligne, colonne):
+        """Vérifie si un coup est autorisé."""
+        if ligne < 0 or ligne >= self.taille or colonne < 0 or colonne >= self.taille:
+            return False
+
+        if (ligne, colonne) in self.cases_bloquees:
+            return False
+
+        if self.grille[ligne][colonne] != " ":
+            return False
+
+        return True
+
+    def jouer_coup(self, ligne, colonne):
+        """Place le symbole du joueur actuel si le coup est valide."""
+        if self.coup_valide(ligne, colonne):
+            self.grille[ligne][colonne] = self.joueur_actuel
             return True
         return False
-    
-    #cette fonction verifie s'il y'a un gagnant
-    def verifier_gagnant(grille):
-        #verification de la colonnes 
-        for i in range(3):
-            #verification de la ligne i
-            if grille[i][0]==grille[i][1] == grille[i][2]!= VIDE:
-                return grille[i][0]
-            
-            #verification de la colonne i
-            if grille[0][i] == grille[1][i] == grille[2][i] != VIDE:
-                return grille[0][i]
-            #verifie la diagonale principale
-            if grille[0][0] == grille[1][1] == grille[2][0] != VIDE:
-                return[0][0]
-            #Verifie la deuxieme diagonale
-            if grille[0][2] == grille[1][1] == grille[2][0] != VIDE:
-                return[0][2]
-            
-            #AUCUN GAGNANT
-            return None
-        
-        #cette fonction verifie si la grille est pleine
-        def grille_pleine(grille):
-            for ligne in grille:
-                for case in ligne:
-                    if case == VIDE:
-                        return false
+
+    def changer_joueur(self):
+        """Passe de X à O ou de O à X."""
+        if self.joueur_actuel == "X":
+            self.joueur_actuel = "O"
+        else:
+            self.joueur_actuel = "X"
+
+    def verifier_victoire(self, symbole):
+        """Vérifie si le symbole a gagné."""
+        # Vérification des lignes
+        for ligne in self.grille:
+            if all(case == symbole for case in ligne):
+                return True
+
+        # Vérification des colonnes
+        for col in range(self.taille):
+            if all(self.grille[ligne][col] == symbole for ligne in range(self.taille)):
+                return True
+
+        # Diagonale principale
+        if all(self.grille[i][i] == symbole for i in range(self.taille)):
             return True
-        
-        #cette fonction dit si la parti est terminee
-        def etat_terminal(grille):
-            return verifier_gagnant(grille) is not None or grille_pleine(grille)
-        
-        #cette fonction transforme la grille en tuple
-        #cette representation est utile pour l'IA car les tuples peuvent servir de cle dan un dictionnaire python
-        def etat_grille(grille):
-            return tuple(case for ligne in grille for case in ligne)
-        
-            
+
+        # Diagonale secondaire
+        if all(self.grille[i][self.taille - 1 - i] == symbole for i in range(self.taille)):
+            return True
+
+        return False
+
+    def verifier_match_nul(self):
+        """Vérifie s'il n'y a plus de cases libres."""
+        for i in range(self.taille):
+            for j in range(self.taille):
+                if self.grille[i][j] == " ":
+                    return False
+        return True
