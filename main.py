@@ -1,4 +1,5 @@
 from morpion import Morpion
+from minMax import coup_ia_minmax
 
 
 def afficher_titre():
@@ -6,25 +7,42 @@ def afficher_titre():
     print("=" * 45)
     print("        BIENVENUE DANS LE MORPION")
     print("=" * 45)
-    print("1. Mode classique")
-    print("2. Mode avec cases bloquées")
+    print("1. Joueur vs Joueur (classique)")
+    print("2. Joueur vs Joueur (cases bloquées)")
+    print("3. Joueur vs IA (MinMax)")
+    print("4. Joueur vs IA (minMax avec cases bloquées)")
+    print("5. Joueur vs IA (Qlearning) - à venir")
     print("=" * 45)
 
 
 def choisir_mode():
     """Permet de choisir le mode de jeu."""
     afficher_titre()
-    choix = input("Choisissez un mode (1 ou 2) : ")
+    choix = input("Choisissez un mode : ")
 
     if choix == "1":
-        return 0
+        return 0, False
 
     elif choix == "2":
         while True:
             try:
                 nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
                 if 0 <= nb <= 3:
-                    return nb
+                    return nb, False
+                else:
+                    print("Veuillez entrer un nombre entre 0 et 3.")
+            except ValueError:
+                print("Erreur : vous devez entrer un nombre valide.")
+
+    elif choix == "3":
+        return 0, True
+
+    elif choix == "4":
+        while True:
+            try:
+                nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
+                if 0 <= nb <= 3:
+                    return nb, True
                 else:
                     print("Veuillez entrer un nombre entre 0 et 3.")
             except ValueError:
@@ -32,7 +50,7 @@ def choisir_mode():
 
     else:
         print("Choix invalide. Le mode classique sera lancé.")
-        return 0
+        return 0, False
 
 
 def demander_coordonnees():
@@ -48,17 +66,25 @@ def demander_coordonnees():
 
 def jouer_partie():
     """Lance une partie complète."""
-    nb_cases_bloquees = choisir_mode()
+    nb_cases_bloquees, ia_active = choisir_mode()
     jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
 
     while True:
         jeu.afficher_grille()
 
-        ligne, colonne = demander_coordonnees()
-
-        if not jeu.jouer_coup(ligne, colonne):
-            print("Coup invalide : case occupée, bloquée ou hors de la grille.")
-            continue
+        if ia_active and jeu.joueur_actuel == "O":
+            print("Tour de l'IA (O)...")
+            coup = coup_ia_minmax(jeu)
+            if coup is not None:
+                ligne, colonne = coup
+                jeu.jouer_coup(ligne, colonne)
+            else:
+                print("Aucun coup possible pour l'IA.")
+        else:
+            ligne, colonne = demander_coordonnees()
+            if not jeu.jouer_coup(ligne, colonne):
+                print("Coup invalide : case occupée, bloquée ou hors de la grille.")
+                continue
 
         if jeu.verifier_victoire(jeu.joueur_actuel):
             jeu.afficher_grille()
