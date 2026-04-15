@@ -8,7 +8,7 @@ def afficher_titre():
     print("=" * 45)
     print("        BIENVENUE DANS LE MORPION")
     print("=" * 45)
-    print("1. Mode classique")
+    print("1. Mode classique (humain vs humain)")
     print("2. Mode avec cases bloquées")
     print("3. Mode contre l'IA (Q-learning)")
     print("4. Mode contre l'IA (MinMax)")
@@ -21,45 +21,35 @@ def choisir_mode():
     afficher_titre()
     choix = input("Choisissez un mode : ")
 
-    global ia_active
-
     if choix == "1":
-        return 0
-
+        return "humain_vs_humain", 0
     elif choix == "2":
         while True:
             try:
                 nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
                 if 0 <= nb <= 3:
-                    return nb
+                    return "humain_vs_humain_bloquees", nb
                 else:
                     print("Veuillez entrer un nombre entre 0 et 3.")
             except ValueError:
                 print("Erreur : vous devez entrer un nombre valide.")
-
     elif choix == "3":
-        ia_active = True
-        return 0
-    
+        return "humain_vs_ia_qlearning", 0
     elif choix == "4":
-        ia_active = True
-        return 0
-
+        return "humain_vs_ia_minmax", 0
     elif choix == "5":
-        ia_active = True
         while True:
             try:
                 nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
                 if 0 <= nb <= 3:
-                    return nb
+                    return "humain_vs_ia_minmax_bloquees", nb
                 else:
                     print("Veuillez entrer un nombre entre 0 et 3.")
             except ValueError:
                 print("Erreur : vous devez entrer un nombre valide.")
-
     else:
         print("Choix invalide. Le mode classique sera lancé.")
-        return 0
+        return "humain_vs_humain", 0
 
 
 def demander_coordonnees():
@@ -184,29 +174,25 @@ def choisir_nb_cases_bloquees():
 
 def jouer_humain_vs_humain():
     """Lance une partie entre deux joueurs humains."""
-    nb_cases_bloquees = choisir_nb_cases_bloquees()
-    jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
-
-    while True:
-        jeu.afficher_grille()
-        print(f"\nTour du joueur {jeu.joueur_actuel}")
-
-        ligne, colonne = demander_coordonnees()
-        if not jeu.jouer_coup(ligne, colonne):
-            print("Coup invalide : case occupée, bloquée ou hors de la grille.")
-            continue
-
-        if jeu.verifier_victoire(jeu.joueur_actuel):
+    def partie(nb_cases_bloquees=0):
+        jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
+        while True:
             jeu.afficher_grille()
-            print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
-            break
-
-        if jeu.verifier_match_nul():
-            jeu.afficher_grille()
-            print("\nMatch nul !")
-            break
-
-        jeu.changer_joueur()
+            print(f"\nTour du joueur {jeu.joueur_actuel}")
+            ligne, colonne = demander_coordonnees()
+            if not jeu.jouer_coup(ligne, colonne):
+                print("Coup invalide : case occupee, bloquee ou hors de la grille.")
+                continue
+            if jeu.verifier_victoire(jeu.joueur_actuel):
+                jeu.afficher_grille()
+                print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
+                break
+            if jeu.verifier_match_nul():
+                jeu.afficher_grille()
+                print("\nMatch nul !")
+                break
+            jeu.changer_joueur()
+    return partie
     nb_cases_bloquees = choisir_nb_cases_bloquees()
     jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
 
@@ -272,12 +258,110 @@ def jouer_humain_vs_humain():
 
 
 def main():
-    mode = choisir_mode()
+    mode, nb_cases_bloquees = choisir_mode()
 
-    if mode == "1":
-        jouer_humain_vs_humain()
-    else:
+    if mode == "humain_vs_humain":
+        # Mode classique sans cases bloquées
+        def partie():
+            jeu = Morpion()
+            while True:
+                jeu.afficher_grille()
+                print(f"\nTour du joueur {jeu.joueur_actuel}")
+                ligne, colonne = demander_coordonnees()
+                if not jeu.jouer_coup(ligne, colonne):
+                    print("Coup invalide : case occupee, bloquee ou hors de la grille.")
+                    continue
+                if jeu.verifier_victoire(jeu.joueur_actuel):
+                    jeu.afficher_grille()
+                    print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
+                    break
+                if jeu.verifier_match_nul():
+                    jeu.afficher_grille()
+                    print("\nMatch nul !")
+                    break
+                jeu.changer_joueur()
+        partie()
+    elif mode == "humain_vs_humain_bloquees":
+        # Mode humain vs humain avec cases bloquées
+        def partie():
+            jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
+            while True:
+                jeu.afficher_grille()
+                print(f"\nTour du joueur {jeu.joueur_actuel}")
+                ligne, colonne = demander_coordonnees()
+                if not jeu.jouer_coup(ligne, colonne):
+                    print("Coup invalide : case occupee, bloquee ou hors de la grille.")
+                    continue
+                if jeu.verifier_victoire(jeu.joueur_actuel):
+                    jeu.afficher_grille()
+                    print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
+                    break
+                if jeu.verifier_match_nul():
+                    jeu.afficher_grille()
+                    print("\nMatch nul !")
+                    break
+                jeu.changer_joueur()
+        partie()
+    elif mode == "humain_vs_ia_qlearning":
         jouer_humain_vs_ia()
+    elif mode == "humain_vs_ia_minmax":
+        def partie():
+            jeu = Morpion()
+            while True:
+                jeu.afficher_grille()
+                print(f"\nTour du joueur {jeu.joueur_actuel}")
+                if jeu.joueur_actuel == "O":
+                    print("Tour de l'IA (O)...")
+                    coup = coup_ia_minmax(jeu)
+                    if coup is not None:
+                        ligne, colonne = coup
+                        jeu.jouer_coup(ligne, colonne)
+                    else:
+                        print("Aucun coup possible pour l'IA.")
+                else:
+                    ligne, colonne = demander_coordonnees()
+                    if not jeu.jouer_coup(ligne, colonne):
+                        print("Coup invalide : case occupee, bloquee ou hors de la grille.")
+                        continue
+                if jeu.verifier_victoire(jeu.joueur_actuel):
+                    jeu.afficher_grille()
+                    print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
+                    break
+                if jeu.verifier_match_nul():
+                    jeu.afficher_grille()
+                    print("\nMatch nul !")
+                    break
+                jeu.changer_joueur()
+        partie()
+    elif mode == "humain_vs_ia_minmax_bloquees":
+        def partie():
+            jeu = Morpion(nb_cases_bloquees=nb_cases_bloquees)
+            while True:
+                jeu.afficher_grille()
+                print(f"\nTour du joueur {jeu.joueur_actuel}")
+                if jeu.joueur_actuel == "O":
+                    print("Tour de l'IA (O)...")
+                    coup = coup_ia_minmax(jeu)
+                    if coup is not None:
+                        ligne, colonne = coup
+                        jeu.jouer_coup(ligne, colonne)
+                    else:
+                        print("Aucun coup possible pour l'IA.")
+                else:
+                    ligne, colonne = demander_coordonnees()
+                    if not jeu.jouer_coup(ligne, colonne):
+                        print("Coup invalide : case occupee, bloquee ou hors de la grille.")
+                        continue
+                if jeu.verifier_victoire(jeu.joueur_actuel):
+                    jeu.afficher_grille()
+                    print(f"\nVictoire du joueur {jeu.joueur_actuel} !")
+                    break
+                if jeu.verifier_match_nul():
+                    jeu.afficher_grille()
+                    print("\nMatch nul !")
+                    break
+                jeu.changer_joueur()
+        partie()
 
 
 if __name__ == "__main__":
