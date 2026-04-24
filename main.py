@@ -13,6 +13,8 @@ def afficher_titre():
     print("3. Mode contre l'IA (Q-learning)")
     print("4. Mode contre l'IA (MinMax)")
     print("5. Mode contre l'IA (MinMax + cases bloquées)")
+    print("6. Comparer les IA (Q-learning vs MinMax)")
+    print("0. Quitter")
     print("=" * 45)
 
 
@@ -21,35 +23,59 @@ def choisir_mode():
     afficher_titre()
     choix = input("Choisissez un mode : ")
 
-    if choix == "1":
-        return "humain_vs_humain", 0
-    elif choix == "2":
-        while True:
+    while True:
+        if choix == "1":
+            return "humain_vs_humain", 0
+        elif choix == "2":
+            while True:
+                try:
+                    nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
+                    if 0 <= nb <= 3:
+                        return "humain_vs_humain_bloquees", nb
+                    else:
+                        print("Veuillez entrer un nombre entre 0 et 3.")
+                except ValueError:
+                    print("Erreur : vous devez entrer un nombre valide.")
+        elif choix == "3":
+            return "humain_vs_ia_qlearning", 0
+        elif choix == "4":
+            return "humain_vs_ia_minmax", 0
+        elif choix == "5":
+            while True:
+                try:
+                    nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
+                    if 0 <= nb <= 3:
+                        return "humain_vs_ia_minmax_bloquees", nb
+                    else:
+                        print("Veuillez entrer un nombre entre 0 et 3.")
+                except ValueError:
+                    print("Erreur : vous devez entrer un nombre valide.")
+        elif choix == "6":
+            agent_qlearning = QLearningAgent(symbole="X")
             try:
-                nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
-                if 0 <= nb <= 3:
-                    return "humain_vs_humain_bloquees", nb
-                else:
-                    print("Veuillez entrer un nombre entre 0 et 3.")
-            except ValueError:
-                print("Erreur : vous devez entrer un nombre valide.")
-    elif choix == "3":
-        return "humain_vs_ia_qlearning", 0
-    elif choix == "4":
-        return "humain_vs_ia_minmax", 0
-    elif choix == "5":
-        while True:
-            try:
-                nb = int(input("Combien de cases bloquées ? (1 à 3 conseillé) : "))
-                if 0 <= nb <= 3:
-                    return "humain_vs_ia_minmax_bloquees", nb
-                else:
-                    print("Veuillez entrer un nombre entre 0 et 3.")
-            except ValueError:
-                print("Erreur : vous devez entrer un nombre valide.")
-    else:
-        print("Choix invalide. Le mode classique sera lancé.")
-        return "humain_vs_humain", 0
+                agent_qlearning.charger("q_table.pkl")
+            except FileNotFoundError:
+                print("\nErreur : le fichier q_table.pkl est introuvable.")
+                print("Vous devez d'abord lancer l'entraînement avec : python entrainement.py")
+                return "comparaison_ia", 0
+
+            agent_minmax = "minMax"  # Juste un label pour l'IA MinMax
+            from evaluation import evaluation
+            eval_comparaison = evaluation(agent_qlearning, agent_minmax, num_parties=1000)
+            resultats = eval_comparaison.evaluer()
+            print("\nRésultats de la comparaison entre Q-learning et MinMax :")
+            print(f"Q-learning a gagné {resultats['qlearning']} parties.")
+            print(f"MinMax a gagné {resultats['minMax']} parties.")
+            print(f"Il y a eu {resultats['egalite']} égalités.")
+            return "comparaison_ia", 0
+        elif choix == "0":
+            print("Merci d'avoir joué ! À bientôt.")
+            exit()
+        else:
+            print("Choix invalide. Le mode classique sera lancé.")
+            return "humain_vs_humain", 0
+        # Redemander le choix si on n'a pas quitte ou retourne
+        choix = input("Choisissez un mode : ")
 
 
 def demander_coordonnees():
