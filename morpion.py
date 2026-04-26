@@ -12,24 +12,84 @@ class Morpion:
         if nb_cases_bloquees > 0:
             self.generer_cases_bloquees()
 
-    def generer_cases_bloquees(self):
-        """Choisit aléatoirement les cases bloquées."""
-        toutes_les_cases = [(i, j) for i in range(self.taille) for j in range(self.taille)]
-        cases_choisies = random.sample(toutes_les_cases, self.nb_cases_bloquees)
+    def lignes_gagnantes(self):
+        """Toutes les lignes de victoire."""
+        lignes = []
 
-        for case in cases_choisies:
-            self.cases_bloquees.add(case)
-            i, j = case
-            self.grille[i][j] = "#"
+        # Lignes
+        for i in range(self.taille):
+            lignes.append([(i, j) for j in range(self.taille)])
+
+        # Colonnes
+        for j in range(self.taille):
+            lignes.append([(i, j) for i in range(self.taille)])
+
+        # Diagonale principale
+        lignes.append([(i, i) for i in range(self.taille)])
+
+        # Diagonale secondaire
+        lignes.append([(i, self.taille - 1 - i) for i in range(self.taille)])
+
+        return lignes
+
+    def compter_lignes_ouvertes(self):
+        """Compte les lignes encore jouables."""
+        compteur = 0
+        for ligne in self.lignes_gagnantes():
+            if all((i, j) not in self.cases_bloquees for i, j in ligne):
+                compteur += 1
+        return compteur
+
+    def configuration_bloquage_valide(self, minimum_lignes_ouvertes=2):
+        """Évite les plateaux trop fermés."""
+        return self.compter_lignes_ouvertes() >= minimum_lignes_ouvertes
+
+    def generer_cases_bloquees(self):
+        """Place les cases bloquées de façon plus intelligente."""
+        toutes_les_cases = [(i, j) for i in range(self.taille) for j in range(self.taille)]
+        essais_max = 100
+
+        for _ in range(essais_max):
+            self.cases_bloquees = set(random.sample(toutes_les_cases, self.nb_cases_bloquees))
+            self.grille = [[" " for _ in range(self.taille)] for _ in range(self.taille)]
+
+            for i, j in self.cases_bloquees:
+                self.grille[i][j] = "#"
+
+            minimum = 2 if self.taille == 3 else 3
+            if self.configuration_bloquage_valide(minimum_lignes_ouvertes=minimum):
+                return
+
+    def definir_cases_bloquees_manuellement(self, positions):
+        """Permet de tester un scénario précis."""
+        self.cases_bloquees = set()
+        self.grille = [[" " for _ in range(self.taille)] for _ in range(self.taille)]
+
+        for i, j in positions:
+            if 0 <= i < self.taille and 0 <= j < self.taille:
+                self.cases_bloquees.add((i, j))
+                self.grille[i][j] = "#"
+
+        minimum = 2 if self.taille == 3 else 3
+        return self.configuration_bloquage_valide(minimum_lignes_ouvertes=minimum)
+
+    def reinitialiser(self):
+        """Remet la partie à zéro."""
+        self.grille = [[" " for _ in range(self.taille)] for _ in range(self.taille)]
+        self.cases_bloquees = set()
+        self.joueur_actuel = "X"
+
+        if self.nb_cases_bloquees > 0:
+            self.generer_cases_bloquees()
 
     def afficher_grille(self):
-        """Affiche une grille propre dans le terminal."""
-        print("\n" + "=" * 35)
-        print("           MORPION")
-        print("=" * 35)
+        """Affichage propre."""
+        print("\n" + "=" * 45)
+        print(f"       MORPION {self.taille}x{self.taille}")
+        print("=" * 45)
         print(f"Joueur actuel : {self.joueur_actuel}")
         print("Légende : X = joueur 1 | O = joueur 2 | # = bloquée | . = vide")
-        print("-" * 35)
+        print("-" * 45)
 
         print("    " + "   ".join(str(i) for i in range(self.taille)))
         print("   +" + "---+" * self.taille)
@@ -38,16 +98,13 @@ class Morpion:
             ligne_affichee = []
             for j in range(self.taille):
                 case = self.grille[i][j]
-                if case == " ":
-                    ligne_affichee.append(".")
-                else:
-                    ligne_affichee.append(case)
+                ligne_affichee.append("." if case == " " else case)
 
             print(f" {i} | " + " | ".join(ligne_affichee) + " |")
             print("   +" + "---+" * self.taille)
 
     def coup_valide(self, ligne, colonne):
-        """Vérifie si un coup est autorisé."""
+        """Vérifie si la case est jouable."""
         if ligne < 0 or ligne >= self.taille or colonne < 0 or colonne >= self.taille:
             return False
 
@@ -60,28 +117,25 @@ class Morpion:
         return True
 
     def jouer_coup(self, ligne, colonne):
-        """Place le symbole du joueur actuel si le coup est valide."""
+        """Joue avec le joueur actuel."""
         if self.coup_valide(ligne, colonne):
             self.grille[ligne][colonne] = self.joueur_actuel
             return True
         return False
 
     def jouer_symbole(self, ligne, colonne, symbole):
-        """Permet à l'IA de jouer directement avec X ou O."""
+        """Utile pour les IA."""
         if self.coup_valide(ligne, colonne):
             self.grille[ligne][colonne] = symbole
             return True
         return False
 
     def changer_joueur(self):
-        """Passe de X à O ou de O à X."""
-        if self.joueur_actuel == "X":
-            self.joueur_actuel = "O"
-        else:
-            self.joueur_actuel = "X"
+        """Change de joueur."""
+        self.joueur_actuel = "O" if self.joueur_actuel == "X" else "X"
 
     def coups_possibles(self):
-        """Retourne toutes les cases encore jouables."""
+        """Liste des cases libres."""
         coups = []
         for i in range(self.taille):
             for j in range(self.taille):
@@ -90,18 +144,15 @@ class Morpion:
         return coups
 
     def obtenir_etat(self):
-        """Transforme la grille en chaîne exploitable par l'IA."""
+        """État lisible par l'IA."""
         etat = []
         for ligne in self.grille:
             for case in ligne:
-                if case == " ":
-                    etat.append("_")
-                else:
-                    etat.append(case)
+                etat.append("_" if case == " " else case)
         return "".join(etat)
 
     def verifier_victoire(self, symbole):
-        """Vérifie si le symbole a gagné."""
+        """Teste si un joueur remplit une ligne complète."""
         for ligne in self.grille:
             if all(case == symbole for case in ligne):
                 return True
@@ -119,7 +170,7 @@ class Morpion:
         return False
 
     def verifier_match_nul(self):
-        """Vérifie s'il n'y a plus de cases libres."""
+        """S'il n'y a plus de case libre."""
         for i in range(self.taille):
             for j in range(self.taille):
                 if self.grille[i][j] == " ":
@@ -135,5 +186,5 @@ class Morpion:
         return None
 
     def est_termine(self):
-        """Retourne True si la partie est finie."""
+        """Fin de partie."""
         return self.obtenir_gagnant() is not None or self.verifier_match_nul()

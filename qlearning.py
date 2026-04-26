@@ -11,20 +11,17 @@ class QLearningAgent:
         self.q_table = {}
 
     def get_q_value(self, etat, action):
-        """Retourne la valeur Q d'un couple (état, action)."""
+        """Valeur Q d'un état-action."""
         return self.q_table.get((etat, action), 0.0)
 
     def choisir_action(self, jeu, entrainement=True):
-        """
-        Choisit une action à jouer.
-        - En entraînement : parfois aléatoire
-        - Sinon : meilleure action connue
-        """
+        """Choisit un coup."""
         actions = jeu.coups_possibles()
 
         if not actions:
             return None
 
+        # Un peu de hasard pendant l'apprentissage
         if entrainement and random.random() < self.epsilon:
             return random.choice(actions)
 
@@ -44,7 +41,7 @@ class QLearningAgent:
         return random.choice(meilleures_actions)
 
     def mettre_a_jour(self, etat, action, recompense, etat_suivant, actions_suivantes):
-        """Met à jour la table Q après une action."""
+        """Formule du Q-learning."""
         ancienne_valeur = self.get_q_value(etat, action)
 
         if actions_suivantes:
@@ -59,15 +56,15 @@ class QLearningAgent:
         self.q_table[(etat, action)] = nouvelle_valeur
 
     def reduire_epsilon(self, facteur=0.995, minimum=0.05):
-        """Réduit progressivement l'exploration."""
+        """Moins de hasard avec le temps."""
         self.epsilon = max(minimum, self.epsilon * facteur)
 
     def sauvegarder(self, nom_fichier="q_table.pkl"):
-        """Sauvegarde la table Q dans un fichier."""
+        """Sauvegarde la mémoire de l'agent."""
         with open(nom_fichier, "wb") as f:
             pickle.dump(self.q_table, f)
 
     def charger(self, nom_fichier="q_table.pkl"):
-        """Charge la table Q depuis un fichier."""
+        """Recharge la mémoire."""
         with open(nom_fichier, "rb") as f:
             self.q_table = pickle.load(f)
