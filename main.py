@@ -18,10 +18,12 @@ def afficher_titre():
     print("=" * 60)
     print("         MORPION AVEC CASES BLOQUÉES ET IA")
     print("=" * 60)
+    print("0. Quitter")
     print("1. Humain vs Humain")
     print("2. Humain vs Q-learning")
     print("3. Humain vs MinMax")
     print("4. Comparer Q-learning et MinMax")
+    print("5. Entraîner le Q-learning (10000 episodes)")
     print("=" * 60)
 
 
@@ -29,9 +31,9 @@ def choisir_mode():
     """Choix du mode."""
     while True:
         afficher_titre()
-        choix = input("Choisissez un mode (1 à 4) : ")
+        choix = input("Choisissez un mode (0 à 5) : ")
 
-        if choix in ["1", "2", "3", "4"]:
+        if choix in ["0", "1", "2", "3", "4", "5"]:
             return choix
 
         print("Choix invalide.\n")
@@ -283,14 +285,29 @@ def main():
     """Point d'entrée."""
     mode = choisir_mode()
 
-    if mode == "1":
+    if mode == "0":
+        print("Au revoir !")
+        return
+    elif mode == "1":
         jouer_humain_vs_humain()
     elif mode == "2":
         jouer_humain_vs_qlearning()
     elif mode == "3":
         jouer_humain_vs_minmax()
-    else:
+    elif mode == "4":
         comparer_les_ia()
+    elif mode == "5":
+        # Entrainement du Q-learning (10000 episodes)
+        from entrainement import entrainer_agent
+        nb_cases_bloquees = choisir_nb_cases_bloquees()
+        print("\nEntrainement du Q-learning en cours...")
+        agent, stats = entrainer_agent(nb_episodes=10000, nb_cases_bloquees=nb_cases_bloquees)
+        print("\n=== ENTRAINEMENT TERMINÉ ===")
+        print(f"Victoires : {stats['victoires']}")
+        print(f"Défaites  : {stats['defaites']}")
+        print(f"Nuls      : {stats['nuls']}")
+        agent.sauvegarder("q_table.pkl")
+        print("\nTable Q sauvegardée dans q_table.pkl")
 
 
 if __name__ == "__main__":
